@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
+import { useNavigate } from "react-router-dom";
 
-function ListaPorteros({ onSeleccionar }) {
+function ListaPorteros() {
   const [porteros, setPorteros] = useState([]);
   const [mostrar, setMostrar] = useState(false);
+  const navigate = useNavigate();
 
   const cargarPorteros = async () => {
     const snapshot = await getDocs(collection(db, "porteros"));
@@ -17,6 +19,10 @@ function ListaPorteros({ onSeleccionar }) {
     setMostrar(!mostrar);
   };
 
+  const seleccionarPortero = (portero) => {
+    navigate("/portero", { state: { portero } }); // ✅ redirigir correctamente
+  };
+
   return (
     <div>
       <button onClick={toggleMostrar}>
@@ -26,7 +32,7 @@ function ListaPorteros({ onSeleccionar }) {
         <ul>
           {porteros.map(portero => (
             <li key={portero.id}>
-              <button onClick={() => onSeleccionar(portero)}>
+              <button onClick={() => seleccionarPortero(portero)}>
                 {portero.nombre}
               </button>
             </li>

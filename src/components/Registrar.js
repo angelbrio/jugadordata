@@ -6,7 +6,7 @@ const tipos = ["defensivo", "ofensivo", "oc", "tiros", "finalizaciones"];
 
 function Registrar() {
   const navigate = useNavigate();
-  const { partidoId } = useParams(); // 👈 capturamos el ID desde la URL
+  const { id: partidoId } = useParams(); // ✅ corregido: capturar 'id' como 'partidoId'
 
   return (
     <div style={{ padding: "2rem" }}>

@@ -2,17 +2,20 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, collection, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import ResumenPartido from "./ResumenPartido";
 
 const tipos = ["defensivo", "ofensivo", "oc", "tiros", "finalizaciones"];
 
 const acciones = {
-  defensivo: [ "Blocaje frontal", "Blocaje frontal raso", "Blocaje lateral raso",
+  defensivo: [
+    "Blocaje frontal", "Blocaje frontal raso", "Blocaje lateral raso",
     "Blocaje lateral 1/2 altura", "Blocaje aéreo", "Desvío lateral raso",
     "Desvío lateral 1/2 altura", "Prolongación", "Despeje de puños",
     "Cobertura zona", "Despeje cabeza", "1vs1 pie", "1vs1 mano",
     "Error no forzado", "Gol"
   ],
-  ofensivo: [ "Saque de puerta corto", "Saque de puerta largo", "Saque de volea",
+  ofensivo: [
+    "Saque de puerta corto", "Saque de puerta largo", "Saque de volea",
     "Saque de mano", "Pase pie corto", "Pase pie largo", "Despeje"
   ],
   oc: ["Derecha", "Centro", "Izquierda"],
@@ -31,11 +34,10 @@ function VistaPartido() {
   const [eventos, setEventos] = useState([]);
   const [minuto, setMinuto] = useState(0);
   const [segundo, setSegundo] = useState(0);
-  const [fase, setFase] = useState("inicio"); // inicio, primera, descanso, segunda, final
+  const [fase, setFase] = useState("inicio");
 
   const intervaloRef = useRef(null);
 
-  // 🧠 Cargar partido y eventos
   useEffect(() => {
     const cargar = async () => {
       const snap = await getDoc(doc(db, "partidos", id));
@@ -45,10 +47,8 @@ function VistaPartido() {
         setMinuto(data.minuto || 0);
         setSegundo(data.segundo || 0);
 
-        // 🔁 Restaurar cronómetro según estado
-        if (data.minuto >= 90) {
-          setFase("final");
-        } else if (data.minuto >= 46) {
+        if (data.minuto >= 90) setFase("final");
+        else if (data.minuto >= 46) {
           setFase("segunda");
           iniciarCronometro();
         } else if (data.minuto >= 1) {
@@ -77,7 +77,6 @@ function VistaPartido() {
           setMinuto(m => {
             const nuevoMinuto = m + 1;
 
-            // ✅ Guardar minuto y reiniciar segundo
             updateDoc(doc(db, "partidos", id), {
               minuto: nuevoMinuto,
               segundo: 0,
@@ -99,8 +98,6 @@ function VistaPartido() {
         }
 
         const nuevoSegundo = prev + 1;
-
-        // ✅ Guardar segundo actual
         updateDoc(doc(db, "partidos", id), {
           segundo: nuevoSegundo,
         });
@@ -157,13 +154,27 @@ function VistaPartido() {
                   <td>{accion}</td>
                   {[...Array(45)].map((_, i) => {
                     const minutoCol = i + 1 + (fase === "segunda" ? 45 : 0);
-                    const encontrada = eventosParte.some(e =>
+                    const evento = eventosParte.find(e =>
                       e.accion === accion &&
                       (e.minuto === minutoCol || (e.minuto === 0 && minutoCol === 1))
                     );
                     return (
-                      <td key={i} style={{ textAlign: "center" }}>
-                        {encontrada ? "X" : ""}
+                      <td key={i} style={{ textAlign: "center", cursor: evento ? "pointer" : "default" }}>
+                        {evento && accion === "Gol" ? (
+                          <span
+                            onClick={() => {
+                              if (evento.golCampo && evento.golPorteria) {
+                                navigate(`/gol/${evento.id}`);
+                              } else {
+                                navigate(`/registrar-gol/${id}/${minutoCol}`);
+                              }
+                            }}
+                            style={{ color: "red", fontWeight: "bold" }}
+                            title="Ver o registrar ubicación del gol"
+                          >
+                            X
+                          </span>
+                        ) : evento ? "X" : ""}
                       </td>
                     );
                   })}
@@ -189,7 +200,13 @@ function VistaPartido() {
 
   return (
     <div>
-      <h3>📋 Partido vs {partido.equipo}</h3>
+      <ResumenPartido
+        portero={{ nombre: partido.porteroNombre || "Portero" }}
+        equipo={partido.equipo}
+        eventos={eventos}
+        totalPartidos={1}
+      />
+
       <p>⏱ Minuto: {minuto} | Segundo: {segundo}</p>
 
       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
@@ -198,8 +215,6 @@ function VistaPartido() {
       </div>
 
       {renderBotonesTipo()}
-
-      <h4>⭐ Registro competitivo por minuto</h4>
       {renderTabla()}
     </div>
   );

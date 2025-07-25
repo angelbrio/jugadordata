@@ -27,27 +27,33 @@ const atributosPorTipo = {
 function RegistrarAtributo() {
   const { partidoId, tipo } = useParams();
   const navigate = useNavigate();
-  const atributos = atributosPorTipo[tipo] || [];
   const [porteroId, setPorteroId] = useState(null);
 
   useEffect(() => {
     const obtenerPortero = async () => {
-      const snap = await getDoc(doc(db, "partidos", partidoId));
-      if (snap.exists()) {
-        setPorteroId(snap.data().porteroId);
+      try {
+        const snap = await getDoc(doc(db, "partidos", partidoId));
+        if (snap.exists()) {
+          setPorteroId(snap.data().porteroId);
+        } else {
+          alert("❌ No se encontró el partido.");
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Error al obtener portero:", error);
       }
     };
+
     obtenerPortero();
-  }, [partidoId]);
+  }, [partidoId, navigate]);
 
   const registrar = async (accion) => {
     if (!porteroId) {
-      alert("No se ha cargado el portero.");
+      alert("❌ No se ha cargado el portero.");
       return;
     }
 
     try {
-      // ✅ Leemos minuto/segundo en tiempo real desde Firestore
       const partidoSnap = await getDoc(doc(db, "partidos", partidoId));
       const data = partidoSnap.data();
       const minuto = data?.minuto ?? 0;
@@ -58,18 +64,25 @@ function RegistrarAtributo() {
         porteroId,
         tipo,
         accion,
-        minuto: minuto === 0 ? 1 : minuto, // ✅ asegura que se registre al menos en el minuto 1
+        minuto: minuto === 0 ? 1 : minuto,
         segundo,
         timestamp: new Date().toISOString(),
         parte: minuto >= 45 ? 2 : 1
       });
 
-      navigate(`/partido/${partidoId}`);
+      // Si es gol, redirigir a registrar posición
+      if (accion === "Gol") {
+        navigate(`/registrar-gol/${partidoId}/${minuto === 0 ? 1 : minuto}`);
+      } else {
+        navigate(`/partido/${partidoId}`);
+      }
     } catch (err) {
       console.error("❌ Error al registrar acción:", err);
       alert("Error al registrar acción");
     }
   };
+
+  const atributos = atributosPorTipo[tipo] || [];
 
   return (
     <div style={{ padding: "2rem" }}>

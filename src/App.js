@@ -3,24 +3,27 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import CrearPortero from "./components/CrearPortero";
-import ListaPorteros from "./components/ListaPorteros";
+import ListaPorteros from "./components/listaPorteros";
 import VistaPartido from "./components/VistaPartido";
 import Registrar from "./components/Registrar";
 import RegistrarAtributo from "./components/RegistrarAtributo";
+import RegistrarGolVista from "./components/RegistrarGolVista";
+import MostrarGol from "./components/MostrarGol";
+
+
 
 // Wrappers y nuevos componentes
 import PorteroDashboardWrapper from "./components/PorteroDashboardWrapper";
 import CrearPartidoWrapper from "./components/CrearPartidoWrapper";
 import ListaPartidosWrapper from "./components/ListaPartidosWrapper";
+import RegistrarGol from "./components/RegistrarGol"; // ✅ NUEVO
 
 function App() {
   return (
     <Router>
       <div style={{ padding: "2rem" }}>
-        <h1>🧤 App de Porteros</h1>
-
+        {/* Página principal con selección/creación de portero */}
         <Routes>
-          {/* Página principal con selección/creación de portero */}
           <Route
             path="/"
             element={
@@ -48,6 +51,11 @@ function App() {
 
           {/* Registro de atributo de acción específica */}
           <Route path="/registrar/:partidoId/:tipo" element={<RegistrarAtributo />} />
+
+          <Route path="/gol/:eventoId" element={<MostrarGol />} />
+
+          {/* Registrar posición del GOL en campo y portería */}
+          <Route path="/registrar-gol/:partidoId/:minuto" element={<RegistrarGol />} /> {/* ✅ NUEVA RUTA */}
         </Routes>
       </div>
     </Router>

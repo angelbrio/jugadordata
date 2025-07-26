@@ -56,23 +56,33 @@ function RegistrarAtributo() {
     try {
       const partidoSnap = await getDoc(doc(db, "partidos", partidoId));
       const data = partidoSnap.data();
-      const minuto = data?.minuto ?? 0;
-      const segundo = data?.segundo ?? 0;
+
+      const inicioMs = data?.inicioMs;
+      const ahora = Date.now();
+
+      let minuto = 0;
+      let segundo = 0;
+
+      if (inicioMs) {
+        const transcurrido = ahora - inicioMs;
+        const totalSegundos = Math.floor(transcurrido / 1000);
+        minuto = Math.floor(totalSegundos / 60);
+        segundo = totalSegundos % 60;
+      }
 
       await addDoc(collection(db, "eventos"), {
         partidoId,
         porteroId,
         tipo,
         accion,
-        minuto: minuto === 0 ? 1 : minuto,
+        minuto: minuto + 1, // ⏱ Casilla correspondiente en la tabla
         segundo,
         timestamp: new Date().toISOString(),
         parte: minuto >= 45 ? 2 : 1
       });
 
-      // Si es gol, redirigir a registrar posición
       if (accion === "Gol") {
-        navigate(`/registrar-gol/${partidoId}/${minuto === 0 ? 1 : minuto}`);
+        navigate(`/registrar-gol/${partidoId}/${minuto + 1}`);
       } else {
         navigate(`/partido/${partidoId}`);
       }

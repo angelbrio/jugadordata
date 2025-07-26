@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, collection, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -35,8 +35,9 @@ function VistaPartido() {
   const [minuto, setMinuto] = useState(0);
   const [segundo, setSegundo] = useState(0);
   const [fase, setFase] = useState("inicio");
-
-  const intervaloRef = useRef(null);
+  const [tablaFase, setTablaFase] = useState("primera");
+  const [golesPortero, setGolesPortero] = useState(0);
+  const [golesRival, setGolesRival] = useState(0);
 
   useEffect(() => {
     const cargar = async () => {
@@ -44,17 +45,30 @@ function VistaPartido() {
       if (snap.exists()) {
         const data = snap.data();
         setPartido(data);
-        setMinuto(data.minuto || 0);
-        setSegundo(data.segundo || 0);
 
-        if (data.minuto >= 90) setFase("final");
-        else if (data.minuto >= 46) {
-          setFase("segunda");
-          iniciarCronometro();
-        } else if (data.minuto >= 1) {
-          setFase("primera");
-          iniciarCronometro();
+        setGolesPortero(data.golesPortero || 0);
+        setGolesRival(data.golesRival || 0);
+
+        if (data.fase === "primera" || data.fase === "segunda") {
+          const ahora = Date.now();
+          const ms = ahora - data.inicioMs;
+          const totalSegundos = Math.floor(ms / 1000);
+          const m = Math.floor(totalSegundos / 60);
+          const s = totalSegundos % 60;
+
+          setMinuto(m);
+          setSegundo(s);
+
+          if (data.fase === "primera" && m >= 45) {
+            setFase("descanso");
+          } else if (data.fase === "segunda" && m >= 90) {
+            setFase("final");
+          } else {
+            setFase(data.fase);
+          }
         } else {
+          setMinuto(0);
+          setSegundo(0);
           setFase("inicio");
         }
       }
@@ -66,73 +80,87 @@ function VistaPartido() {
     };
 
     cargar();
-  }, [id]);
 
-  const iniciarCronometro = () => {
-    if (intervaloRef.current) return;
+    const intervalo = setInterval(() => {
+      if (!partido || !partido.inicioMs) return;
 
-    intervaloRef.current = setInterval(() => {
-      setSegundo(prev => {
-        if (prev + 1 >= 60) {
-          setMinuto(m => {
-            const nuevoMinuto = m + 1;
+      const ahora = Date.now();
+      const ms = ahora - partido.inicioMs;
+      const totalSegundos = Math.floor(ms / 1000);
+      const m = Math.floor(totalSegundos / 60);
+      const s = totalSegundos % 60;
 
-            updateDoc(doc(db, "partidos", id), {
-              minuto: nuevoMinuto,
-              segundo: 0,
-            });
+      setMinuto(m);
+      setSegundo(s);
 
-            if (nuevoMinuto === 45) {
-              clearInterval(intervaloRef.current);
-              intervaloRef.current = null;
-              setFase("descanso");
-            } else if (nuevoMinuto === 90) {
-              clearInterval(intervaloRef.current);
-              intervaloRef.current = null;
-              setFase("final");
-            }
-
-            return nuevoMinuto;
-          });
-          return 0;
-        }
-
-        const nuevoSegundo = prev + 1;
-        updateDoc(doc(db, "partidos", id), {
-          segundo: nuevoSegundo,
-        });
-
-        return nuevoSegundo;
-      });
+      if (partido.fase === "primera" && m >= 45) {
+        setFase("descanso");
+      } else if (partido.fase === "segunda" && m >= 90) {
+        setFase("final");
+      }
     }, 1000);
+
+    return () => clearInterval(intervalo);
+  }, [id, partido]);
+
+  const iniciarPrimeraParte = async () => {
+    const ahora = Date.now();
+    await updateDoc(doc(db, "partidos", id), {
+      inicioMs: ahora,
+      fase: "primera"
+    });
+    setFase("primera");
   };
 
-  const reiniciar = async () => {
-    clearInterval(intervaloRef.current);
-    intervaloRef.current = null;
-    setMinuto(0);
-    setSegundo(0);
-    setFase("inicio");
+  const iniciarSegundaParte = async () => {
+    const ahora = Date.now();
+    await updateDoc(doc(db, "partidos", id), {
+      inicioMs: ahora,
+      fase: "segunda"
+    });
+    setFase("segunda");
+  };
+
+  const actualizarMarcador = async (equipo) => {
+    const campo = equipo === "portero" ? "golesPortero" : "golesRival";
+    const nuevoValor = equipo === "portero" ? golesPortero + 1 : golesRival + 1;
 
     await updateDoc(doc(db, "partidos", id), {
-      minuto: 0,
-      segundo: 0,
+      [campo]: nuevoValor
     });
+
+    if (equipo === "portero") setGolesPortero(nuevoValor);
+    else setGolesRival(nuevoValor);
   };
 
-  const renderBotonesTipo = () => (
-    <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
-      {tipos.map(tipo => (
-        <button key={tipo} onClick={() => navigate(`/registrar/${id}/${tipo}`)}>
-          {tipo.toUpperCase()}
-        </button>
-      ))}
-    </div>
-  );
+  const renderBotonInicio = () => {
+    if (fase === "inicio") {
+      return <button onClick={iniciarPrimeraParte}>▶️ Iniciar primer tiempo</button>;
+    } else if (fase === "descanso") {
+      return <button onClick={iniciarSegundaParte}>▶️ Iniciar segundo tiempo</button>;
+    } else if (fase === "final") {
+      return <button disabled>🏁 Partido finalizado</button>;
+    }
+    return null;
+  };
+
+  const renderBotonesTipo = () => {
+    if (fase === "final") return null;
+
+    return (
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+        {tipos.map(tipo => (
+          <button key={tipo} onClick={() => navigate(`/registrar/${id}/${tipo}`)}>
+            {tipo.toUpperCase()}
+          </button>
+        ))}
+      </div>
+    );
+  };
 
   const renderTabla = () => {
     const eventosParte = eventos.filter(e =>
-      fase === "segunda" ? e.minuto > 45 : e.minuto <= 45
+      tablaFase === "segunda" ? e.minuto > 45 : e.minuto <= 45
     );
 
     return (
@@ -141,7 +169,7 @@ function VistaPartido() {
           <tr>
             <th>Acción</th>
             {[...Array(45)].map((_, i) => (
-              <th key={i}>{i + 1 + (fase === "segunda" ? 45 : 0)}</th>
+              <th key={i}>{i + 1 + (tablaFase === "segunda" ? 45 : 0)}</th>
             ))}
           </tr>
         </thead>
@@ -153,7 +181,7 @@ function VistaPartido() {
                 <tr key={accion}>
                   <td>{accion}</td>
                   {[...Array(45)].map((_, i) => {
-                    const minutoCol = i + 1 + (fase === "segunda" ? 45 : 0);
+                    const minutoCol = i + 1 + (tablaFase === "segunda" ? 45 : 0);
                     const evento = eventosParte.find(e =>
                       e.accion === accion &&
                       (e.minuto === minutoCol || (e.minuto === 0 && minutoCol === 1))
@@ -187,31 +215,48 @@ function VistaPartido() {
     );
   };
 
-  const renderBotonInicio = () => {
-    if (fase === "inicio") {
-      return <button onClick={() => { setFase("primera"); iniciarCronometro(); }}>▶️ Iniciar primer tiempo</button>;
-    } else if (fase === "descanso") {
-      return <button onClick={() => { setFase("segunda"); iniciarCronometro(); }}>▶️ Iniciar segundo tiempo</button>;
-    }
-    return null;
-  };
-
   if (!partido) return <p>Cargando partido...</p>;
 
   return (
     <div>
+      <div style={{ marginBottom: "1rem" }}>
+        <button
+          onClick={() => {
+            navigate("/lista-partidos", {
+              state: {
+                portero: {
+                  id: partido.porteroId,
+                  nombre: partido.porteroNombre || "Portero"
+                }
+              }
+            });
+          }}
+        >
+          🔙 Ver partidos
+        </button>
+      </div>
+
       <ResumenPartido
         portero={{ nombre: partido.porteroNombre || "Portero" }}
         equipo={partido.equipo}
         eventos={eventos}
         totalPartidos={1}
+        golesPortero={golesPortero}
+        golesRival={golesRival}
+        onGolPortero={() => actualizarMarcador("portero")}
+        onGolRival={() => actualizarMarcador("rival")}
       />
 
       <p>⏱ Minuto: {minuto} | Segundo: {segundo}</p>
 
       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
         {renderBotonInicio()}
-        <button onClick={reiniciar}>🔁 Reiniciar</button>
+      </div>
+
+      <div style={{ marginBottom: "1rem" }}>
+        <button onClick={() => setTablaFase(tablaFase === "primera" ? "segunda" : "primera")}>
+          👁️ Ver {tablaFase === "primera" ? "segunda" : "primera"} parte
+        </button>
       </div>
 
       {renderBotonesTipo()}

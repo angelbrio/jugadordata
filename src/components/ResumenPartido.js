@@ -1,5 +1,4 @@
-// components/ResumenPartido.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
 function ContadorEditable({ label, value, onIncrement }) {
   return (
@@ -11,7 +10,16 @@ function ContadorEditable({ label, value, onIncrement }) {
   );
 }
 
-function ResumenPartido({ portero, equipo, eventos, totalPartidos }) {
+function ResumenPartido({
+  portero,
+  equipo,
+  eventos,
+  totalPartidos,
+  golesPortero = 0,
+  golesRival = 0,
+  onGolPortero,
+  onGolRival,
+}) {
   const [campo, setCampo] = useState("");
   const [resultado, setResultado] = useState("");
   const [editableCampo, setEditableCampo] = useState(false);
@@ -80,6 +88,13 @@ function ResumenPartido({ portero, equipo, eventos, totalPartidos }) {
         <div><strong>Acciones total:</strong> {totalAcciones}</div>
         <div><strong>Acciones Ofen:</strong> {ofensivas}</div>
         <div><strong>Acciones Defen:</strong> {defensivas}</div>
+      </div>
+
+      {/* 🧮 Marcador editable */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1rem", marginBottom: "1rem" }}>
+        <button onClick={onGolPortero}>➕</button>
+        <h2 style={{ margin: 0 }}>{golesPortero} - {golesRival}</h2>
+        <button onClick={onGolRival}>➕</button>
       </div>
 
       <hr />

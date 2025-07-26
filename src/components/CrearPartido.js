@@ -17,6 +17,7 @@ function CrearPartido({ portero }) {
     try {
       const docRef = await addDoc(collection(db, "partidos"), {
         porteroId: portero.id,
+        porteroNombre: portero.nombre, // ✅ se guarda el nombre del portero
         equipo: equipo.trim(),
         fecha: new Date().toISOString(),
         minuto: 0,

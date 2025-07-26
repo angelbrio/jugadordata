@@ -1,4 +1,3 @@
-// App.js
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -10,8 +9,6 @@ import RegistrarAtributo from "./components/RegistrarAtributo";
 import RegistrarGolVista from "./components/RegistrarGolVista";
 import MostrarGol from "./components/MostrarGol";
 
-
-
 // Wrappers y nuevos componentes
 import PorteroDashboardWrapper from "./components/PorteroDashboardWrapper";
 import CrearPartidoWrapper from "./components/CrearPartidoWrapper";
@@ -22,7 +19,6 @@ function App() {
   return (
     <Router>
       <div style={{ padding: "2rem" }}>
-        {/* Página principal con selección/creación de portero */}
         <Routes>
           <Route
             path="/"
@@ -34,28 +30,17 @@ function App() {
             }
           />
 
-          {/* Dashboard del portero con opciones de acción */}
+          {/* NUEVA ruta para volver desde "ListaPartidos" */}
+          <Route path="/dashboard" element={<PorteroDashboardWrapper />} />
+
           <Route path="/portero" element={<PorteroDashboardWrapper />} />
-
-          {/* Crear partido con portero seleccionado */}
           <Route path="/crear-partido" element={<CrearPartidoWrapper />} />
-
-          {/* Ver lista de partidos guardados del portero */}
           <Route path="/lista-partidos" element={<ListaPartidosWrapper />} />
-
-          {/* Vista principal del partido con cronómetro */}
           <Route path="/partido/:id" element={<VistaPartido />} />
-
-          {/* Registro de acción (menú de tipos) */}
           <Route path="/registrar/:id" element={<Registrar />} />
-
-          {/* Registro de atributo de acción específica */}
           <Route path="/registrar/:partidoId/:tipo" element={<RegistrarAtributo />} />
-
           <Route path="/gol/:eventoId" element={<MostrarGol />} />
-
-          {/* Registrar posición del GOL en campo y portería */}
-          <Route path="/registrar-gol/:partidoId/:minuto" element={<RegistrarGol />} /> {/* ✅ NUEVA RUTA */}
+          <Route path="/registrar-gol/:partidoId/:minuto" element={<RegistrarGol />} />
         </Routes>
       </div>
     </Router>

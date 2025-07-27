@@ -48,7 +48,7 @@ function ResumenPartido({
     <div style={{ marginBottom: "2rem", border: "1px solid #ccc", padding: "1rem", borderRadius: "8px" }}>
       <h3>📋 Información del Partido</h3>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "2rem", marginBottom: "1rem" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "2rem", marginBottom: "1rem", alignItems: "center" }}>
         <div><strong>Portero:</strong> {portero?.nombre}</div>
         <div><strong>Rival:</strong> {equipo}</div>
         <div><strong>Jornada:</strong> {totalPartidos}</div>
@@ -88,13 +88,14 @@ function ResumenPartido({
         <div><strong>Acciones total:</strong> {totalAcciones}</div>
         <div><strong>Acciones Ofen:</strong> {ofensivas}</div>
         <div><strong>Acciones Defen:</strong> {defensivas}</div>
-      </div>
 
-      {/* 🧮 Marcador editable */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1rem", marginBottom: "1rem" }}>
-        <button onClick={onGolPortero}>➕</button>
-        <h2 style={{ margin: 0 }}>{golesPortero} - {golesRival}</h2>
-        <button onClick={onGolRival}>➕</button>
+        {/* 🧮 Marcador en línea */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <strong>Marcador:</strong>
+          <button onClick={onGolPortero}>➕</button>
+          <span>{golesPortero} - {golesRival}</span>
+          <button onClick={onGolRival}>➕</button>
+        </div>
       </div>
 
       <hr />

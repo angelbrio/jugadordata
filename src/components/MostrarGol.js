@@ -1,4 +1,3 @@
-// components/MostrarGol.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
@@ -29,10 +28,11 @@ const MostrarGol = () => {
     top: `${y * 100}%`,
     left: `${x * 100}%`,
     transform: "translate(-50%, -50%)",
-    width: "12px",
-    height: "12px",
+    width: "30px",
+    height: "30px",
     borderRadius: "50%",
     backgroundColor: "red",
+    border: "2px solid white"
   });
 
   if (!evento) return <p>🔄 Cargando...</p>;
@@ -41,8 +41,7 @@ const MostrarGol = () => {
     <div style={{ padding: "2rem" }}>
       <h3>🎯 Gol registrado</h3>
       <div style={{ display: "flex", gap: "2rem" }}>
-        {/* Campo */}
-        <div style={{ position: "relative", width: 300, height: 200 }}>
+        <div style={{ position: "relative", width: 800, height: 533 }}>
           <img
             src="/assets/Field.png"
             alt="Campo"
@@ -52,9 +51,7 @@ const MostrarGol = () => {
             <div style={dotStyle(evento.golCampo.x, evento.golCampo.y)} />
           )}
         </div>
-
-        {/* Portería */}
-        <div style={{ position: "relative", width: 200, height: 200 }}>
+        <div style={{ position: "relative", width: 700, height: 280 }}>
           <img
             src="/assets/goal.png"
             alt="Portería"

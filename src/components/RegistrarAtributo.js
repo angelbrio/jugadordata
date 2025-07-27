@@ -1,4 +1,3 @@
-// components/RegistrarAtributo.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { addDoc, collection, doc, getDoc } from "firebase/firestore";
@@ -58,6 +57,7 @@ function RegistrarAtributo() {
       const data = partidoSnap.data();
 
       const inicioMs = data?.inicioMs;
+      const tiempoAcumulado = data?.tiempoAcumulado || 0;
       const ahora = Date.now();
 
       let minuto = 0;
@@ -65,26 +65,28 @@ function RegistrarAtributo() {
 
       if (inicioMs) {
         const transcurrido = ahora - inicioMs;
-        const totalSegundos = Math.floor(transcurrido / 1000);
+        const totalSegundos = Math.floor(transcurrido / 1000) + tiempoAcumulado;
         minuto = Math.floor(totalSegundos / 60);
         segundo = totalSegundos % 60;
       }
+
+      const parte = minuto >= 45 ? "segunda" : "primera";
 
       await addDoc(collection(db, "eventos"), {
         partidoId,
         porteroId,
         tipo,
         accion,
-        minuto: minuto + 1, // ⏱ Casilla correspondiente en la tabla
+        minuto,
         segundo,
         timestamp: new Date().toISOString(),
-        parte: minuto >= 45 ? 2 : 1
+        parte: parte === "segunda" ? 2 : 1
       });
 
       if (accion === "Gol") {
-        navigate(`/registrar-gol/${partidoId}/${minuto + 1}`);
+        navigate(`/registrar-gol/${partidoId}/${minuto}`);
       } else {
-        navigate(`/partido/${partidoId}`);
+        navigate(`/partido/${partidoId}`, { state: { parte } });
       }
     } catch (err) {
       console.error("❌ Error al registrar acción:", err);

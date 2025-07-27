@@ -39,18 +39,18 @@ const RegistrarGol = () => {
     top: `${y * 100}%`,
     left: `${x * 100}%`,
     transform: "translate(-50%, -50%)",
-    width: "12px",
-    height: "12px",
+    width: "30px",
+    height: "30px",
     borderRadius: "50%",
     backgroundColor: "red",
+    border: "2px solid white"
   });
 
   return (
     <div style={{ padding: "2rem" }}>
       <h3>📍 Haz clic en ambas imágenes para registrar el gol</h3>
       <div style={{ display: "flex", gap: "2rem", marginBottom: "2rem" }}>
-        {/* Campo */}
-        <div style={{ position: "relative", width: 300, height: 200 }}>
+        <div style={{ position: "relative", width: 800, height: 533 }}>
           <img
             src="/assets/Field.png"
             alt="Campo"
@@ -59,9 +59,7 @@ const RegistrarGol = () => {
           />
           {campoPos && <div style={dotStyle(campoPos.x, campoPos.y)} />}
         </div>
-
-        {/* Portería */}
-        <div style={{ position: "relative", width: 200, height: 200 }}>
+        <div style={{ position: "relative", width: 700, height: 280 }}>
           <img
             src="/assets/goal.png"
             alt="Portería"
@@ -71,7 +69,6 @@ const RegistrarGol = () => {
           {porteriaPos && <div style={dotStyle(porteriaPos.x, porteriaPos.y)} />}
         </div>
       </div>
-
       <button onClick={guardar} disabled={!campoPos || !porteriaPos}>
         💾 Guardar Gol
       </button>

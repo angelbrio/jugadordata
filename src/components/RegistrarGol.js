@@ -17,11 +17,17 @@ const RegistrarGol = () => {
       const evento = eventos.find(e =>
         e.partidoId === partidoId &&
         e.accion === "Gol" &&
-        e.minuto === parseInt(minuto)
+        e.minuto === parseInt(minuto, 10)
       );
 
       if (evento) {
         setEventoId(evento.id);
+        // Precarga si ya había puntos guardados (y compatibilidad con nombres antiguos)
+        if (evento.posCampo) setCampoPos(evento.posCampo);
+        else if (evento.golCampo) setCampoPos(evento.golCampo);
+
+        if (evento.posPorteria) setPorteriaPos(evento.posPorteria);
+        else if (evento.golPorteria) setPorteriaPos(evento.golPorteria);
       } else {
         alert("❌ No se encontró el evento de gol.");
         navigate(`/partido/${partidoId}`);
@@ -31,8 +37,9 @@ const RegistrarGol = () => {
     cargarEvento();
   }, [partidoId, minuto, navigate]);
 
+  // Calcula coordenadas relativas al CONTENEDOR (no a la imagen)
   const handleClick = (e, tipo) => {
-    const rect = e.target.getBoundingClientRect();
+    const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
     const point = { x: parseFloat(x.toFixed(4)), y: parseFloat(y.toFixed(4)) };
@@ -48,14 +55,13 @@ const RegistrarGol = () => {
     }
 
     await updateDoc(doc(db, "eventos", eventoId), {
-      golCampo: campoPos,
-      golPorteria: porteriaPos
+      posCampo: campoPos,
+      posPorteria: porteriaPos
     });
 
     alert("✅ Gol actualizado con coordenadas");
 
-    // Determinar parte para volver a VistaPartido correctamente
-    const parte = parseInt(minuto) >= 45 ? "segunda" : "primera";
+    const parte = parseInt(minuto, 10) >= 45 ? "segunda" : "primera";
     navigate(`/partido/${partidoId}`, { state: { parte } });
   };
 
@@ -68,32 +74,50 @@ const RegistrarGol = () => {
     height: "30px",
     borderRadius: "50%",
     backgroundColor: "red",
-    border: "2px solid white"
+    border: "2px solid white",
+    pointerEvents: "none"
   });
+
+  const box = {
+    position: "relative",
+    width: 800,
+    maxWidth: "100%",
+    cursor: "crosshair"
+  };
+
+  const img = {
+    display: "block",
+    width: "100%",
+    height: "auto",
+    objectFit: "contain"
+  };
 
   return (
     <div style={{ padding: "2rem" }}>
       <h3>📍 Haz clic en ambas imágenes para registrar el gol</h3>
-      <div style={{ display: "flex", gap: "2rem", marginBottom: "2rem" }}>
-        <div style={{ position: "relative", width: 800, height: 533 }}>
+
+      <div style={{ display: "flex", gap: "2rem", marginBottom: "2rem", flexWrap: "wrap" }}>
+        {/* Campo */}
+        <div style={box} onClick={(e) => handleClick(e, "campo")}>
           <img
             src="/assets/Field.png"
             alt="Campo"
-            style={{ width: "100%", height: "100%", cursor: "crosshair" }}
-            onClick={(e) => handleClick(e, "campo")}
+            style={img}
           />
           {campoPos && <div style={dotStyle(campoPos.x, campoPos.y)} />}
         </div>
-        <div style={{ position: "relative", width: 700, height: 280 }}>
+
+        {/* Portería (sin cortes) */}
+        <div style={{ ...box, width: 700 }} onClick={(e) => handleClick(e, "porteria")}>
           <img
             src="/assets/goal.png"
             alt="Portería"
-            style={{ width: "100%", height: "100%", cursor: "crosshair" }}
-            onClick={(e) => handleClick(e, "porteria")}
+            style={img}
           />
           {porteriaPos && <div style={dotStyle(porteriaPos.x, porteriaPos.y)} />}
         </div>
       </div>
+
       <button onClick={guardar} disabled={!campoPos || !porteriaPos}>
         💾 Guardar Gol
       </button>
